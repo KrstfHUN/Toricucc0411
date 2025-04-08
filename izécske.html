@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Történelmi Flashcardok</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .flashcard-container {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 400px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            background-color: #f0f0f0;
+        }
+
+        .back {
+            background-color: #e0e0e0;
+            transform: rotateY(180deg);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #tudtamGomb {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #nemTudtamGomb {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #ujraGomb {
+            background-color: #008CBA;
+            color: white;
+        }
+
+        #eredmenyek {
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="flashcard-container">
+        <div class="flashcard">
+            <div class="front"></div>
+            <div class="back"></div>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <button id="nemTudtamGomb">Nem tudtam</button>
+        <button id="tudtamGomb">Tudtam</button>
+    </div>
+
+    <div id="eredmenyek"></div>
+    <button id="ujraGomb" style="display: none;">Újra a "Nem tudtam" kártyákkal</button>
+
+    <script>
+        const flashcardContainer = document.querySelector('.flashcard-container');
+        const flashcard = document.querySelector('.flashcard');
+        const front = document.querySelector('.front');
+        const back = document.querySelector('.back');
+        const nemTudtamGomb = document.getElementById('nemTudtamGomb');
+        const tudtamGomb = document.getElementById('tudtamGomb');
+        const eredmenyekDiv = document.getElementById('eredmenyek');
+        const ujraGomb = document.getElementById('ujraGomb');
+
+        const kartyak = [
+            { elolap: "Lakatos Géza", hatlap: "Magyar tábornok és politikus, 1944 augusztusától októberig Magyarország miniszterelnöke." },
+            { elolap: "Sztójay Döme", hatlap: "Magyar katonatiszt és politikus, 1944 márciusától augusztusig Magyarország miniszterelnöke a német megszállás idején." },
+            { elolap: "Bárdossy László", hatlap: "Magyar politikus, 1941 áprilisától 1942 márciusáig Magyarország miniszterelnöke." },
+            { elolap: "Horthy Miklós", hatlap: "Magyarország kormányzója 1920 és 1944 között." },
+            { elolap: "Kállay Miklós", hatlap: "Magyar politikus, 1942 márciusától 1944 márciusáig Magyarország miniszterelnöke." },
+            { elolap: "Szálasi Ferenc", hatlap: "Magyar politikus, a nyilas mozgalom vezetője. 1944 októberétől 1945 áprilisáig Magyarország \"nemzetvezetője\"." },
+            { elolap: "Sztehlo Gábor", hatlap: "Evangélikus lelkész, aki a második világháború idején több ezer zsidó gyermeket mentett meg Budapesten." },
+            { elolap: "Edmund Veesenmayer", hatlap: "Német diplomata és SS-Standartenführer, Hitler különmegbízottja Magyarországon a német megszállás idején." },
+            { elolap: "Raoul Wallenberg", hatlap: "Svéd diplomata, aki Budapesten több ezer zsidót mentett meg a holokauszttól." },
+            { elolap: "Bethlen István", hatlap: "Magyar politikus, miniszterelnök 1921 és 1931 között." },
+            { elolap: "Werth Henrik", hatlap: "Magyar vezérezredes, a Magyar Honvédség vezérkari főnöke a második világháború elején." },
+            { elolap: "Teleki Pál", hatlap: "Magyar politikus, miniszterelnök 1920-1921-ben és 1939-1941-ben." },
+            { elolap: "Imrédy Béla", hatlap: "Magyar politikus, miniszterelnök 1938 és 1939 között." },
+            { elolap: "Bajcsy-Zsilinszky Endre", hatlap: "Magyar politikus, újságíró, a nemzeti ellenállás egyik vezető alakja." },
+            { elolap: "Apor Vilmos", hatlap: "Győri püspök, aki a második világháború idején kiállt az üldözöttekért és sokakat mentett meg." },
+            { elolap: "Rudolf Höss", hatlap: "Az auschwitz-birkenaui koncentrációs tábor parancsnoka." },
+            { elolap: "Adolf Eichmann", hatlap: "Német SS-tiszt, a \"végső megoldás\" egyik fő szervezője és végrehajtója." },
+            { elolap: "Heinrich Himmler", hatlap: "A náci párt egyik vezetője, az SS vezetője, a holokauszt egyik fő felelőse." },
+            { elolap: "holokauszt", hatlap: "A második világháború alatti, a náci Németország és kollaboránsai által végrehajtott szisztematikus népirtás a zsidók ellen." },
+            { elolap: "porrajmos", hatlap: "A roma nép elleni népirtás a náci rezsim és szövetségesei által a második világháború idején." },
+            { elolap: "végső megoldás", hatlap: "A náci Németország által a zsidókérdésre kidolgozott titkos terv, amely az európai zsidóság teljes megsemmisítését célozta meg." },
+            { elolap: "koncentrációs tábor", hatlap: "A náci rezsim által létrehozott fogolytáborok, ahol politikai foglyokat, zsidókat és más üldözötteket tartottak embertelen körülmények között." },
+            { elolap: "gázkamra", hatlap: "Olyan helyiség, amelyet mérges gáz kibocsátására terveztek tömeges gyilkosság céljából a megsemmisítő táborokban." },
+            { elolap: "barakk", hatlap: "Egyszerű, fából vagy más anyagból épített épület, amelyet lakhatásra vagy más célra használtak, különösen a koncentrációs táborokban." },
+            { elolap: "Zyklon-B", hatlap: "Cianicidsav-alapú rovarirtó szer, amelyet a nácik tömeggyilkosságra használtak a gázkamrákban." },
+            { elolap: "munkaszolgálat", hatlap: "A magyar hadsereg keretein belül létrehozott kényszermunka-szolgálat, amelybe a zsidókat és más \"megbízhatatlan\" elemeket sorozták be." },
+            { elolap: "sárga csillag", hatlap: "Dávid-csillag, amelyet a zsidóknak kellett viselniük a nácik által megszállt területeken, hogy megkülönböztessék őket." },
+            { elolap: "szőnyegbombázás", hatlap: "Nagy területre kiterjedő, intenzív légibombázás, amelynek célja az ellenség infrastruktúrájának és moráljának megtörése." },
+            { elolap: "málenkij robot", hatlap: "A Szovjetunióba hurcolt magyar civilek és hadifoglyok kényszermunkája a második világháború után." },
+            { elolap: "Don-kanyar", hatlap: "A keleti frontnak az a szakasza, ahol a magyar 2. hadsereg súlyos veszteségeket szenvedett 1943 telén." },
+            { elolap: "1. zsidótörvény", hatlap: "Korlátozta a zsidók gazdasági és társadalmi szerepvállalását Magyarországon (1938)." },
+            { elolap: "2. zsidótörvény", hatlap: "Tovább szigorította az első törvény rendelkezéseit, már faji alapon határozta meg a zsidóságot (1939)." },
+            { elolap: "3. zsidótörvény", hatlap: "A legszigorúbb zsidótörvény Magyarországon, szinte teljesen kizárta a zsidókat a gazdasági és társadalmi életből (1941)." },
+            { elolap: "újvidéki mészárlás", hatlap: "A magyar honvédség által Újvidéken és környékén elkövetett tömeggyilkosság szerb és zsidó civilek ellen (1942)." },
+            { elolap: "Kamenyec-Podolszkij", hatlap: "Az a helyszín, ahová a magyar hatóságok deportálták a Magyarországon tartózkodó hontalan zsidókat (1941)." },
+            { elolap: "Kállay-kettős", hatlap: "Kállay Miklós miniszterelnök titkos tárgyalásai a nyugati szövetségesekkel Magyarország kiugrásának előkészítésére." },
+            { elolap: "kiugrási kísérlet", hatlap: "Horthy Miklós kormányzó sikertelen kísérlete arra, hogy Magyarországot kivonja a második világháborúból (1944. október 15.)." },
+            { elolap: "Árpád-vonal", hatlap: "Magyarország keleti határán kiépített védelmi vonal a második világháború idején." },
+            { elolap: "Attila-vonal", hatlap: "A németek által Magyarországon kiépített védelmi vonal a második világháború végén." },
+            { elolap: "első bécsi döntés", hatlap: "Németország és Olaszország döntése, amelynek értelmében Magyarország visszakapta a Felvidék déli részét Csehszlovákiától (1938. november 2.)." },
+            { elolap: "második bécsi döntés", hatlap: "Németország és Olaszország döntése, amelynek értelmében Magyarország visszakapta Észak-Erdélyt Romániától (1940. augusztus 30.)." },
+            { elolap: "1944. március 19.", hatlap: "A német hadsereg megszállja Magyarországot (\"Margarethe hadművelet\")." },
+            { elolap: "1941. június 26-27.", hatlap: "Kassa bombázása (a körülmények máig vitatottak), amely ürügyül szolgált Magyarország hadba lépéséhez a Szovjetunió ellen." },
+            { elolap: "háború vége", hatlap: "Európában: 1945. május 8. (Németország kapitulációja)." }
+        ];
+
+        let jelenlegiIndex = 0;
+        let tudtamSzamlalo = 0;
+        let nemTudtamKartyak = [];
+
+        function veletlenSorrend(tomb) {
+            for (let i = tomb.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [tomb[i], tomb[j]] = [tomb[j], tomb[i]];
+            }
+            return tomb;
+        }
+
+        let kevertKartyak = veletlenSorrend([...kartyak]);
+
+        function showKartya() {
+            if (kevertKartyak.length === 0) {
+                front.textContent = "Nincs több kártya!";
+                back.textContent = "Nincs több kártya!";
+                nemTudtamGomb.disabled = true;
+                tudtamGomb.disabled = true;
+                return;
+            }
+            const jelenlegiKartya = kevertKartyak[jelenlegiIndex];
+            front.textContent = jelenlegiKartya.elolap;
+            back.textContent = jelenlegiKartya.hatlap;
+            flashcard.classList.remove('flipped');
+        }
+
+        function kovetkezoKartya() {
+            jelenlegiIndex++;
+            if (jelenlegiIndex < kevertKartyak.length) {
+                showKartya();
+            } else {
+                eredmenyekKiirasa();
+            }
+        }
+
+        function eredmenyekKiirasa() {
+            eredmenyekDiv.textContent = `Tudtad: ${tudtamSzamlalo}, Nem tudtad: ${nemTudtamKartyak.length}`;
+            if (nemTudtamKartyak.length > 0) {
+                ujraGomb.style.display = 'block';
+            }
+            nemTudtamGomb.disabled = true;
+            tudtamGomb.disabled = true;
+        }
+
+        flashcardContainer.addEventListener('click', () => {
+            flashcard.classList.toggle('flipped');
+        });
+
+        tudtamGomb.addEventListener('click', () => {
+            tudtamSzamlalo++;
+            kovetkezoKartya();
+        });
+
+        nemTudtamGomb.addEventListener('click', () => {
+            nemTudtamKartyak.push(kevertKartyak[jelenlegiIndex]);
+            kovetkezoKartya();
+        });
+
+        ujraGomb.addEventListener('click', () => {
+            kevertKartyak = veletlenSorrend([...nemTudtamKartyak]);
+            nemTudtamKartyak = [];
+            jelenlegiIndex = 0;
+            tudtamSzamlalo = 0;
+            eredmenyekDiv.textContent = '';
+            ujraGomb.style.display = 'none';
+            nemTudtamGomb.disabled = false;
+            tudtamGomb.disabled = false;
+            showKartya();
+        });
+
+        showKartya();
+    </script>
+
+</body>
+</html>
